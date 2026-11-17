@@ -9,10 +9,12 @@ import (
 
 	log "github.com/sirupsen/logrus"
 
+	"github.com/slimtoolkit/slim/pkg/checkrun"
 	"github.com/slimtoolkit/slim/pkg/command"
 	"github.com/slimtoolkit/slim/pkg/docker/dockerfile/reverse"
 	"github.com/slimtoolkit/slim/pkg/docker/dockerimage"
 	"github.com/slimtoolkit/slim/pkg/docker/linter/check"
+	"github.com/slimtoolkit/slim/pkg/imagediff"
 	"github.com/slimtoolkit/slim/pkg/system"
 	"github.com/slimtoolkit/slim/pkg/util/errutil"
 	"github.com/slimtoolkit/slim/pkg/version"
@@ -106,7 +108,9 @@ type SystemMetadata struct {
 }
 
 // Output Version for 'build'
-const OVBuildCommand = "1.1"
+// 1.2: additive optional fields image_diff and checks;
+// old parsers ignore unknown fields, new parsers read old reports as nil.
+const OVBuildCommand = "1.2"
 
 // BuildCommand is the 'build' command report data
 type BuildCommand struct {
@@ -128,6 +132,13 @@ type BuildCommand struct {
 	ImageStack             []*reverse.ImageInfo `json:"image_stack"`
 	ImageCreated           bool                 `json:"image_created"`
 	ImageBuildEngine       string               `json:"image_build_engine"`
+	// ImageDiff is the file-level diff between the source and the minified
+	// image (what was removed and what changed). Optional: absent in
+	// reports produced before format version 1.2.
+	ImageDiff *imagediff.Report `json:"image_diff,omitempty"`
+	// Checks holds the verdicts of the user-provided check scripts run in
+	// both images (whether the minified image still works). Optional.
+	Checks *checkrun.Report `json:"checks,omitempty"`
 }
 
 // Output Version for 'profile'
